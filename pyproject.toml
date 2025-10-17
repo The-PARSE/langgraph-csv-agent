@@ -1,0 +1,20 @@
+[project]
+name = "langgraph-csv-agent"
+version = "0.1.0"
+description = "LangGraph CSV Agent with multi-model support (GPT-5, Gemini 2.5, Claude 4.5) and cost tracking"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain-core==0.3.79",
+    "langchain-openai==0.3.14",
+    "langchain-anthropic==0.3.22",
+    "langchain-google-genai==2.1.12",
+    "langgraph==0.3.30",
+    "python-dotenv==1.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
