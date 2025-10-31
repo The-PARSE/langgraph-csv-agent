@@ -17,6 +17,12 @@ class PersistentShell:
 
     def __init__(self):
         """Initialize persistent bash shell."""
+        import os
+
+        # Detect if we're in a virtual environment
+        venv_path = os.environ.get('VIRTUAL_ENV')
+
+        # Start bash shell
         self.process = subprocess.Popen(
             ['/bin/bash'],
             stdin=subprocess.PIPE,
@@ -24,7 +30,8 @@ class PersistentShell:
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
-            universal_newlines=True
+            universal_newlines=True,
+            env=os.environ.copy()  # Inherit environment variables
         )
 
         # Use queues for non-blocking reads
@@ -41,6 +48,40 @@ class PersistentShell:
 
         # Unique marker for command completion
         self.marker = "<<<COMMAND_COMPLETE_MARKER_123>>>"
+
+        # Activate virtual environment if detected
+        if venv_path:
+            activate_script = os.path.join(venv_path, 'bin', 'activate')
+            if os.path.exists(activate_script):
+                # Execute activation command and wait for completion
+                self._execute_init_command(f'source {activate_script}')
+                # Verify activation worked by checking which python3 is being used
+                # This also ensures python3 commands will use venv packages
+
+    def _execute_init_command(self, command: str):
+        """Execute initialization command synchronously."""
+        try:
+            self.process.stdin.write(f'{command}\n')
+            self.process.stdin.write(f'echo "{self.marker}"\n')
+            self.process.stdin.flush()
+
+            # Wait for marker with timeout and drain output
+            start_time = time.time()
+            while time.time() - start_time < 5:  # 5 second timeout
+                try:
+                    line = self.stdout_queue.get(timeout=0.1)
+                    if self.marker in line:
+                        # Drain any remaining output
+                        time.sleep(0.1)
+                        while not self.stdout_queue.empty():
+                            self.stdout_queue.get_nowait()
+                        while not self.stderr_queue.empty():
+                            self.stderr_queue.get_nowait()
+                        return
+                except queue.Empty:
+                    continue
+        except Exception:
+            pass  # Silently fail - shell will still work without venv
 
     @classmethod
     def get_instance(cls) -> 'PersistentShell':

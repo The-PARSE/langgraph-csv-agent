@@ -12,6 +12,9 @@ ENV/
 
 # CSV data files
 csv_data/*.csv
+csv_data/*.md
+csv_data/.sessions/
+csv_data/csv_data/
 
 # IDE
 .vscode/

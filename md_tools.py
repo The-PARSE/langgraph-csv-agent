@@ -62,6 +62,7 @@ def search_md_files(
 
         results = []
         total_matches = 0
+        files_with_matches = set()
 
         for filepath in md_files:
             try:
@@ -76,6 +77,9 @@ def search_md_files(
                         if total_matches >= max_results:
                             results.append(f"\n... (truncated: {max_results} results limit reached)")
                             break
+
+                        # Track which files have matches
+                        files_with_matches.add(rel_path)
 
                         # Add context lines if requested
                         if context_lines > 0:
@@ -103,7 +107,7 @@ def search_md_files(
         if not results:
             return f"No matches found for pattern: {pattern}"
 
-        header = f"Found {total_matches} match(es) in {len([r for r in results if ':' in r])} file(s)\n"
+        header = f"Found {total_matches} match(es) in {len(files_with_matches)} file(s)\n"
         header += "="*80 + "\n"
 
         return header + "\n".join(results)
